@@ -1,6 +1,11 @@
 version: '3.3'
 services:
 
+  backend:
+    env_file: ../.env
+    container_name: foodgram_backend
+    build: ../foodgram_backend
+    
   frontend:
     container_name: foodgram-front
     build: ../frontend
