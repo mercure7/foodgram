@@ -18,16 +18,18 @@ class Recipes(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='recipes',
                                verbose_name='Автор рецепта')
-    tag = models.ManyToManyField('Tags', related_name='recipes',
-                                 verbose_name='Теги')
+    tags = models.ManyToManyField('Tags', related_name='recipes',
+                                  verbose_name='Теги')
     ingredients = models.ManyToManyField('Ingredients',
                                          through='RecipeIngredients',
                                          related_name='recipes',
                                          verbose_name='Ингредиенты')
-    image = models.ImageField(verbose_name='Изображение блюда')
+    image = models.ImageField(upload_to='recipes/images/',
+                              verbose_name='Изображение блюда')
+    pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['id']
+        ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -36,7 +38,7 @@ class Recipes(models.Model):
 
 
 class Ingredients(models.Model):
-    """Модель для ингридиентов."""
+    """Модель для ингредиентов."""
 
     name = models.CharField(max_length=128,
                             verbose_name='Название ингридиента')
@@ -74,7 +76,7 @@ class RecipeIngredients(models.Model):
 
     recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
-    quantity = models.IntegerField(validators=[
+    amount = models.IntegerField(validators=[
         MinValueValidator(1, 'Минимальное количество ингредиента д.б. >= 1')
     ],
         verbose_name='Количество ингредиента в рецепте')
