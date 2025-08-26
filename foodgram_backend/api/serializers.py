@@ -1,11 +1,13 @@
-import base64
-
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from rest_framework import serializers
-
+from djoser.serializers import (UserCreateSerializer,
+                                UserSerializer as BaseUserSerializer,
+                                
+                                )
 
 from recipes.models import Recipes, Ingredients, Tags, RecipeIngredients
+from .fields import Base64ImageField
+
 
 User = get_user_model()
 
@@ -42,18 +44,9 @@ class UserSerializer(serializers.ModelSerializer):
                   'avatar']
 
 
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
-
-
 class RecipeReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения рецептов."""
+
     ingredients = IngredientsSerializer(many=True)
     tags = TagsSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
@@ -66,8 +59,9 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 class RecipePostSerializer(serializers.ModelSerializer):
     """Сериализатор для создания рецептов."""
+
     ingredients = RecipeIngredientsSerialier(many=True)
-    # author = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     image = Base64ImageField()
     author = User.objects.get(id=1)
 
@@ -75,3 +69,20 @@ class RecipePostSerializer(serializers.ModelSerializer):
         model = Recipes
         fields = ['id', 'tags', 'author', 'ingredients', 'name', 'text',
                   'image', 'cooking_time']
+
+
+class UserSignUpSerializer(UserCreateSerializer):
+    """Сериализатор для регистрации пользователей"""
+
+    class Meta(UserCreateSerializer.Meta):
+        model = User
+        fields = ['email', 'username', 'first_name', 'last_name', 'password']
+
+
+class UserGetSerializer(BaseUserSerializer):
+    """ Сериализатор для получения пользователя/ползователей"""
+
+    class Meta(BaseUserSerializer.Meta):
+        model = User
+        fields = ['id', 'email', 'username', 'first_name', 'last_name',
+                  'avatar']

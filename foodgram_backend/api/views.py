@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
+
+from djoser.views import UserViewSet as DjoserUserViewSet
+
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import AccessToken
@@ -10,7 +13,8 @@ from rest_framework import filters
 from .filters import IngredientFilter, RecipeFilter
 from recipes.models import Recipes, Tags, Ingredients
 from .serializers import (RecipeReadSerializer, RecipePostSerializer,
-                          TagsSerializer, IngredientsSerializer
+                          TagsSerializer, IngredientsSerializer,
+                          UserGetSerializer, UserSignUpSerializer
                           )
 
 
@@ -45,3 +49,9 @@ class IngredientViewset(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter, DjangoFilterBackend)
     # search_fields = ('^name',)
     filterset_class = IngredientFilter
+
+
+class CustomUserViewset(DjoserUserViewSet):
+    """Кастом вьюсет для создания пользователей"""
+    pagination_class = LimitOffsetPagination
+    

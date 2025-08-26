@@ -25,6 +25,10 @@ class User(AbstractUser):
     password = models.CharField('Пароль', max_length=254)
     avatar = models.ImageField('Аватар пользователя',
                                upload_to='users/avatars/', blank=True)
+    
+    USERNAME_FIELD = 'email'
+
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
 
     class Meta:
         ordering = ['id']
