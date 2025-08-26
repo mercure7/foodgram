@@ -1,20 +1,25 @@
-import django_filters 
+from django_filters.rest_framework import (FilterSet, CharFilter,
+                                           ModelMultipleChoiceFilter)
 
-from recipes.models import Ingredients, Recipes
+from recipes.models import Ingredients, Recipes, Tags
 
 
-class IngredientFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(lookup_expr='istartswith')
+class IngredientFilter(FilterSet):
+    name = CharFilter(lookup_expr='istartswith')
 
     class Meta:
         model = Ingredients
         fields = ['name']
 
 
-class RecipeFilter(django_filters.FilterSet):
+class RecipeFilter(FilterSet):
     """Фильтр для модели Recipe."""
-    tags = django_filters.CharFilter(field_name='tags__slug',
-                                     lookup_expr='iexact')
+
+    tags = ModelMultipleChoiceFilter(
+        queryset=Tags.objects.all(),
+        field_name='tags__slug',
+        to_field_name='slug'
+    )
 
     class Meta:
         model = Recipes
