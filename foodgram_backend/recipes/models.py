@@ -16,12 +16,15 @@ class Recipes(models.Model):
         ],
         verbose_name='Время приготовления, мин')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               related_name='recipes',
-                               verbose_name='Автор рецепта')
-    tags = models.ManyToManyField('Tags', related_name='recipes',
-                                  verbose_name='Теги')
+                               verbose_name='Автор рецепта', related_name='recipes')
+    tags = models.ManyToManyField('Tags',
+                                  verbose_name='Теги',
+                                  related_name='recipe_tags')
+
     ingredients = models.ManyToManyField('Ingredients',
                                          through='RecipeIngredients',
+                                         through_fields=('recipe_id',
+                                                         'ingredient_id'),
                                          related_name='recipes',
                                          verbose_name='Ингредиенты')
     image = models.ImageField(upload_to='recipes/images/',
@@ -74,15 +77,17 @@ class Tags(models.Model):
 class RecipeIngredients(models.Model):
     """Промежуточная модель для ингредиентов в рецептах."""
 
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
+    recipe_id = models.ForeignKey(Recipes, on_delete=models.CASCADE,
+                                  related_name='recipe_ingredients')
+    ingredient_id = models.ForeignKey(Ingredients, on_delete=models.CASCADE,
+                                      related_name='ingredient_recipes')
     amount = models.PositiveIntegerField(validators=[
         MinValueValidator(1, 'Минимальное количество ингредиента д.б. >= 1')
     ],
         verbose_name='Количество ингредиента в рецепте')
 
     class Meta:
-        ordering = ['recipe']
+        ordering = ['recipe_id']
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
 
@@ -97,6 +102,7 @@ class Favorites(models.Model):
 
     class Meta:
         ordering = ['user']
+        unique_together = ['user', 'recipe']
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
 
@@ -113,3 +119,4 @@ class ShoppingCart(models.Model):
         ordering = ['user']
         verbose_name = 'Корзина для покупок'
         verbose_name_plural = 'Корзина для покупок'
+        unique_together = ['user', 'recipe']
