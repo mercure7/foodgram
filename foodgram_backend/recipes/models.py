@@ -32,7 +32,7 @@ class Recipes(models.Model):
                               verbose_name='Изображение блюда')
     pub_date = models.DateTimeField(auto_now_add=True)
     original_url = models.URLField(unique=True, null=True, blank=True)
-    short_url = models.URLField(unique=True, null=True, blank=True)
+    short_url = models.SlugField(unique=True, null=True, blank=True)
 
     class Meta:
         ordering = ['-pub_date']

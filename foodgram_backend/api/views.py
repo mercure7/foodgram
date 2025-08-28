@@ -1,4 +1,7 @@
-from django.shortcuts import render, get_object_or_404
+import random
+import string
+from django.conf import settings
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from django.template.loader import render_to_string
@@ -20,10 +23,12 @@ from users.models import Follow
 from .serializers import (RecipeReadSerializer, RecipePostSerializer,
                           IngredientsSerializer, TagsReadSerializer,
                           UserGetSerializer, UserSignUpSerializer,
-                          SubscriptionSerializer, AvatarUpdateSerializer
+                          SubscriptionSerializer, AvatarUpdateSerializer,
                           )
 from .permissions import IsAuthorOrReadOnly
+from .pagination import PageLimitPagination
 
+SHORT_CODE_LENGTH = 6
 
 User = get_user_model()
 
@@ -34,8 +39,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     lookup_field = 'id'
-    permission_classes = [AllowAny]
-    pagination_class = PageNumberPagination
+    permission_classes = [AllowAny,]
+    pagination_class = PageLimitPagination
+
+    def generate_short_code(self):
+
+        short_url = ''.join(random.choices(string.ascii_letters
+                            + string.digits, k=SHORT_CODE_LENGTH))
+        if not Recipes.objects.filter(short_url=short_url).exists():
+            return short_url
+        return self.generate_short_code()
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -48,7 +61,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipePostSerializer
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(author=self.request.user, 
+                        short_url=self.generate_short_code())
+        
+        # instance.original_url = f"{settings.BASE_URL}/recipes/{instance.id}/"
+
+        # serializer.save(update_fields=['original_url'])
+    
+
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthorOrReadOnly])
@@ -166,6 +186,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         }
 
         return render(request, 'shopping_list.html', context)
+    
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, id=None):
+        """Получить короткую ссылку для конкретного рецепта"""
+        recipe = get_object_or_404(Recipes, id=id)
+        return Response({
+            'short-link': request.build_absolute_uri(f'/s/{recipe.short_url}/')
+        })
 
 
 class TagViewset(viewsets.ModelViewSet):
@@ -196,7 +224,7 @@ class IngredientViewset(viewsets.ModelViewSet):
 class CustomUserViewset(DjoserUserViewSet):
     """Кастом вьюсет для создания пользователей"""
     pagination_class = LimitOffsetPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     lookup_field = 'id'
 
     @action(detail=True, methods=['post', 'delete'],
@@ -250,7 +278,8 @@ class CustomUserViewset(DjoserUserViewSet):
 
         serializer = SubscriptionSerializer(subscriptions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
+##############################################################################
     @action(detail=False, url_path='me/avatar', methods=['put', 'delete'],
             permission_classes=[IsAuthenticated])
     def avatar(self, request):
@@ -268,7 +297,7 @@ class CustomUserViewset(DjoserUserViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 class Subscribtions(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
@@ -276,5 +305,19 @@ class Subscribtions(viewsets.ModelViewSet):
     parser_classes = [LimitOffsetPagination,]
 
 
-class AvatarViewset(viewsets.ModelViewSet):
-    pass
+# class ShortLinkGetViewset(viewsets.ModelViewSet):
+#     serializer_class = ShortLinkGetSerializer
+#     permission_classes = [AllowAny]
+#     pagination_class = None
+
+#     def get_queryset(self):
+#         # Если хотите фильтровать по recipe_id из URL параметров
+#         recipe_id = self.kwargs.get('recipe_id')
+#         return get_object_or_404(Recipes, id=recipe_id)
+
+
+def redirect_short_link(request, code):
+    if request.method == 'GET':
+        recipe = get_object_or_404(Recipes, short_url=code)
+        return redirect(request.build_absolute_uri(f'/recipes/{recipe.id}/'))
+    return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

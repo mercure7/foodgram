@@ -1,4 +1,7 @@
+import random
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from rest_framework import serializers
 from djoser.serializers import (UserCreateSerializer,
                                 UserSerializer as BaseUserSerializer)
@@ -69,7 +72,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = Recipes
         fields = ['id', 'tags', 'author', 'ingredients', 'name', 'text',
@@ -107,24 +110,39 @@ class RecipePostSerializer(serializers.ModelSerializer):
     # author = UserSerializer(read_only=True)
     image = Base64ImageField()
     # author = serializers.SerializerMethodField()
+    # original_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Recipes
         fields = ['id', 'author', 'tags', 'ingredients', 'name', 'text',
-                  'image', 'cooking_time']
+                  'image', 'cooking_time',]
         read_only_fields = ('author', )
+
+    # def get_self_url(self, obj):
+    #     request = self.context.get('request')
+    #     if request and obj.pk:
+    #         return request.build_absolute_uri(
+    #             reverse('recipes', kwargs={'pk': obj.pk})
+    #         )
+        
+    #      instance.object_url = f"{settings.BASE_URL}/api/recipes/{instance.id}/"
+    #     return None
 
     # def get_author(self, obj):
     #     request = self.context.get('request')
     #     if request and request.user.is_authenticated:
     #         return request.user.id
     #     return None
-
+    
     def create(self, validated_data):
 
         ingredients_data = validated_data.pop('recipe_ingredients')
         tags_data = validated_data.pop('tags')
 
+        # instance = super().create(validated_data)
+
+        # validated_data['original_url'] = f"{settings.BASE_URL}/recipes/{instance.id}/"
+                
         recipe = Recipes.objects.create(**validated_data)
 
         recipe.tags.set(tags_data)
@@ -299,3 +317,12 @@ class AvatarUpdateSerializer(serializers.ModelSerializer):
     #         instance.avatar = None
     #         instance.save()
     #         return instance
+
+
+# class ShortLinkGetSerializer(serializers.ModelSerializer):
+
+#     short_link = serializers.SlugRelatedField(slug_field='short_url', read_only=True)
+
+#     class Meta:
+#         model = Recipes
+#         fields = ['short_link']
