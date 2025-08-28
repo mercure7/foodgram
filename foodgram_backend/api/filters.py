@@ -1,17 +1,31 @@
 from django_filters.rest_framework import (FilterSet, CharFilter,
                                            ModelMultipleChoiceFilter,
                                            BooleanFilter)
+from django.db.models import Q
+from django.db.models import QuerySet
 
 from recipes.models import Ingredients, Recipes, Tags
 
 
 class IngredientFilter(FilterSet):
-    name = CharFilter(lookup_expr='istartswith')
+    # name = CharFilter(lookup_expr='istartswith')
+    name = CharFilter(method='filter_name')
 
     class Meta:
         model = Ingredients
         fields = ['name']
 
+    # Добавляем поиск по наличию символов не только в начале
+    def filter_name(self, queryset, name, value):
+        # # Ищем по началу, но если нет результатов - ищем по содержанию
+        # if queryset.filter(name__istartwith=value).exists():
+        #     return queryset
+        # return queryset.filter(name__icontains=value)
+
+        queryset = queryset.filter(Q(name__istartswith=value) 
+                                   | Q(name__icontains=value))
+        return queryset
+        
 
 class RecipeFilter(FilterSet):
     """Фильтр для модели Recipe."""

@@ -63,7 +63,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения рецептов."""
     
     # ingredients = IngredientsSerializer(many=True, read_only=True)
-    ingredients = RecipeIngredientsReadSerializer(many=True, source='recipe_ingredients')
+    ingredients = RecipeIngredientsReadSerializer(many=True,
+                                                  source='recipe_ingredients')
     tags = TagsReadSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField()

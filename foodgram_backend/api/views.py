@@ -134,12 +134,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         
         # Получаем рецепты из корзины пользователя
-        shopping_cart_items = ShoppingCart.objects.filter(user=user)
-        recipes = [item.recipe for item in shopping_cart_items]
+        recipes_in_cart = []
+        shopping_cart_recipes = ShoppingCart.objects.filter(user=user)
+        recipes_in_cart = [recipe.recipe for recipe in shopping_cart_recipes]
         
         # Собираем все ингредиенты из всех рецептов
         ingredients_dict = {}
-        for recipe in recipes:
+        for recipe in recipes_in_cart:
             for recipe_ingredient in recipe.recipe_ingredients.all():
                 ingredient = recipe_ingredient.ingredient_id
                 key = (ingredient.name, ingredient.measurement_unit)
@@ -157,20 +158,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             }
             for (name, unit), amount in ingredients_dict.items()
         ]
-        
+
         context = {
             'ingredients': ingredients_list,
             'user': user,
-            'total_recipes': len(recipes)
+            'total_recipes': len(recipes_in_cart)
         }
-        
+
         return render(request, 'shopping_list.html', context)
-    
-        
-
-
-    
-
 
 
 class TagViewset(viewsets.ModelViewSet):
@@ -192,11 +187,10 @@ class IngredientViewset(viewsets.ModelViewSet):
 # class FavoriteViewset(viewsets.ModelViewSet):
 #     queryset = Favorites.objects.all()
 #     permission_classes = [IsAuthenticated]
-    
 #     def get_queryset(self):
 #         recipe = get_object_or_404(Recipes, id=self.kwargs.get('id'))
 #         return recipe.favorites.all()
-       
+
 
 ######################################################
 class CustomUserViewset(DjoserUserViewSet):
@@ -212,7 +206,7 @@ class CustomUserViewset(DjoserUserViewSet):
         # recipe = self.get_object()
         follow_user = get_object_or_404(User, id=id)
         user = request.user
-        
+
         subscription = Follow.objects.filter(user=user, following=follow_user)
 
         if request.method == 'POST':
@@ -226,9 +220,9 @@ class CustomUserViewset(DjoserUserViewSet):
                 {'message': 'Пользватель добавлен в подписки'},
                 status=status.HTTP_201_CREATED
             )
-        
+
         elif request.method == 'DELETE':
-            
+
             if not subscription.exists():
                 return Response(
                     {'errors': 'Пользователь не в подписках'},
@@ -238,28 +232,30 @@ class CustomUserViewset(DjoserUserViewSet):
             return Response(
                 {'message': 'Пользователь удален из подписок'},
                 status=status.HTTP_204_NO_CONTENT)
-        
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ИСПРАВИТЬ!!!
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         """Список подписок текущего пользователя"""
         subscriptions = Follow.objects.filter(
             user=request.user
         ).select_related('following')
-        
+
         # Пагинация
         page = self.paginate_queryset(subscriptions)
         if page is not None:
             serializer = SubscriptionSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        
+
         serializer = SubscriptionSerializer(subscriptions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    @action(detail=False, url_path='me/avatar', methods=['put', 'delete'], 
+
+    @action(detail=False, url_path='me/avatar', methods=['put', 'delete'],
             permission_classes=[IsAuthenticated])
     def avatar(self, request):
         """Обновление и удаление аватара текущего пользователя"""
-              
+
         user = request.user
         serializer = AvatarUpdateSerializer(user, data=request.data)
         if request.method == 'PUT' and serializer.is_valid():
@@ -270,9 +266,9 @@ class CustomUserViewset(DjoserUserViewSet):
             user.avatar = None
             user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
-        return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class Subscribtions(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
@@ -281,5 +277,4 @@ class Subscribtions(viewsets.ModelViewSet):
 
 
 class AvatarViewset(viewsets.ModelViewSet):
-    http_method_names = ['put']
-    print('Здесь будет аватар')
+    pass

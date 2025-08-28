@@ -16,7 +16,8 @@ class Recipes(models.Model):
         ],
         verbose_name='Время приготовления, мин')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               verbose_name='Автор рецепта', related_name='recipes')
+                               verbose_name='Автор рецепта',
+                               related_name='recipes')
     tags = models.ManyToManyField('Tags',
                                   verbose_name='Теги',
                                   related_name='recipe_tags')
@@ -30,6 +31,8 @@ class Recipes(models.Model):
     image = models.ImageField(upload_to='recipes/images/',
                               verbose_name='Изображение блюда')
     pub_date = models.DateTimeField(auto_now_add=True)
+    original_url = models.URLField(unique=True, null=True, blank=True)
+    short_url = models.URLField(unique=True, null=True, blank=True)
 
     class Meta:
         ordering = ['-pub_date']
