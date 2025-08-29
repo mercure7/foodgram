@@ -13,6 +13,45 @@ from .fields import Base64ImageField
 
 User = get_user_model()
 
+#############################################################
+# Сериалиазаторы для работы с аутентификацией пользователей #
+#############################################################
+class UserSignUpSerializer(UserCreateSerializer):
+    """Сериализатор для регистрации пользователей"""
+
+    class Meta(UserCreateSerializer.Meta):
+        model = User
+        fields = ['email', 'username', 'first_name', 'last_name', 'password']
+
+
+class UserGetSerializer(BaseUserSerializer):
+    """ Сериализатор для получения пользователя/пользователей"""
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta(BaseUserSerializer.Meta):
+        model = User
+        fields = ['id', 'email', 'username', 'first_name', 'last_name',
+                  'avatar', 'is_subscribed']
+
+    def get_is_subscribed(self, obj):
+        """Проверяет, подписан ли текущий пользователь на этого автора"""
+        request = self.context.get('request')
+        # if not request:
+        #     return {'error': 'Request not found in context'}
+        if request and request.user.is_authenticated:
+            # return Follow.objects.filter(
+            #     user=request.user,
+            #     following=obj
+            # ).exists()
+            return obj.following.filter(user=request.user).exists()
+
+        return False
+
+
+##################################################
+##################################################
+##################################################
+
 
 class TagsReadSerializer(serializers.ModelSerializer):
 
@@ -21,12 +60,12 @@ class TagsReadSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug']
 
 
-class UserSerializer(serializers.ModelSerializer):
+# class UserSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'username', 'first_name', 'last_name',
-                  'avatar']
+#     class Meta:
+#         model = User
+#         fields = ['id', 'email', 'username', 'first_name', 'last_name',
+#                   'avatar']
 
 
 ########################################################
@@ -64,15 +103,15 @@ class IngredientsSerializer(serializers.ModelSerializer):
 ##################################################################
 class RecipeReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения рецептов."""
-    
+
     # ingredients = IngredientsSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientsReadSerializer(many=True,
                                                   source='recipe_ingredients')
     tags = TagsReadSerializer(many=True, read_only=True)
-    author = UserSerializer(read_only=True)
+    author = UserGetSerializer(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Recipes
         fields = ['id', 'tags', 'author', 'ingredients', 'name', 'text',
@@ -92,6 +131,12 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             return obj.shopping_cart.filter(user=request.user).exists()
         return False
 ##################################################
+
+
+class RecipeReadSerializerForSubscriptions(RecipeReadSerializer):
+
+    class Meta(RecipeReadSerializer.Meta):
+        fields = ['id', 'name', 'image', 'cooking_time']
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -209,72 +254,41 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return instance
 
 
-#############################################################
-# Сериалиазаторы для работы с аутентификацией пользователей #
-#############################################################
-class UserSignUpSerializer(UserCreateSerializer):
-    """Сериализатор для регистрации пользователей"""
-
-    class Meta(UserCreateSerializer.Meta):
-        model = User
-        fields = ['email', 'username', 'first_name', 'last_name', 'password']
-
-
-class UserGetSerializer(BaseUserSerializer):
-    """ Сериализатор для получения пользователя/ползователей"""
-    is_subscribed = serializers.SerializerMethodField()
-
-    class Meta(BaseUserSerializer.Meta):
-        model = User
-        fields = ['id', 'email', 'username', 'first_name', 'last_name',
-                  'avatar', 'is_subscribed']
-
-    def get_is_subscribed(self, obj):
-        """Проверяет, подписан ли текущий пользователь на этого автора"""
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return Follow.objects.filter(
-                user=request.user,
-                following=obj
-            ).exists()
-        return False
-
-
-##################################################
-##################################################
-##################################################
-
-
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(UserGetSerializer):
     """Сериализатор для работы с подписками на пользователей"""
-    id = serializers.IntegerField(source='following.id')
-    email = serializers.EmailField(source='following.email')
-    username = serializers.CharField(source='following.username')
-    first_name = serializers.CharField(source='following.first_name')
-    last_name = serializers.CharField(source='following.last_name')
-    is_subscribed = serializers.SerializerMethodField()
+        
+    # recipes = RecipeReadSerializerForSubscriptions(many=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Follow
+    
+    class Meta(UserGetSerializer.Meta):
+        model = User
         fields = [
             'id', 'email', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count'
         ]
 
-    def get_is_subscribed(self, obj):
-        """Всегда True для подписок"""
-        return True
+    
+    # def get_is_subscribed(self, obj):
+    #     """Всегда True для подписок"""
+    #     return True
 
     def get_recipes_count(self, obj):
         """Количество рецептов автора"""
-        return obj.following.recipes.count()
+        return obj.recipes.count()
 
     def get_recipes(self, obj):
         """Cписок рецептов автора"""
-        recipes = obj.following.recipes.all()
-        return recipes
+        
+        recipes_limit = self.context.get('recipes_limit')
+        print(recipes_limit)
+        # if request:
+        # recipes_limit = int(request.query_params.get('recipes_limit', 5))
+        recipes_to_show = obj.recipes.all()[:recipes_limit]
+        # else:
+        #     recipes_to_show = obj.recipes.all()[:2]
+        
+        return RecipeReadSerializerForSubscriptions(recipes_to_show, many=True).data
       
 
 class AvatarUpdateSerializer(serializers.ModelSerializer):

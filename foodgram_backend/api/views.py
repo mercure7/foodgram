@@ -33,28 +33,38 @@ SHORT_CODE_LENGTH = 6
 User = get_user_model()
 
 
+def generate_short_code():
+
+    short_url = ''.join(random.choices(string.ascii_letters
+                        + string.digits, k=SHORT_CODE_LENGTH))
+    if not Recipes.objects.filter(short_url=short_url).exists():
+        return short_url
+    return generate_short_code()
+
+
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     # Заменить пермишен IsAuthor or Readonly
+    permission_classes = [AllowAny,]
+
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     lookup_field = 'id'
-    permission_classes = [AllowAny,]
     pagination_class = PageLimitPagination
 
-    def generate_short_code(self):
+    # def generate_short_code(self):
 
-        short_url = ''.join(random.choices(string.ascii_letters
-                            + string.digits, k=SHORT_CODE_LENGTH))
-        if not Recipes.objects.filter(short_url=short_url).exists():
-            return short_url
-        return self.generate_short_code()
+    #     short_url = ''.join(random.choices(string.ascii_letters
+    #                         + string.digits, k=SHORT_CODE_LENGTH))
+    #     if not Recipes.objects.filter(short_url=short_url).exists():
+    #         return short_url
+    #     return self.generate_short_code()
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAuthenticated()]
         return [AllowAny()]
-    
+
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeReadSerializer
@@ -62,7 +72,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, 
-                        short_url=self.generate_short_code())
+                        short_url=generate_short_code(),
+                        )
         
         # instance.original_url = f"{settings.BASE_URL}/recipes/{instance.id}/"
 
@@ -223,9 +234,19 @@ class IngredientViewset(viewsets.ModelViewSet):
 ######################################################
 class CustomUserViewset(DjoserUserViewSet):
     """Кастом вьюсет для создания пользователей"""
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageLimitPagination
     permission_classes = [AllowAny]
     lookup_field = 'id'
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        
+        # Явно передаем КОНКРЕТНЫЕ параметры, а не весь request
+        context['recipes_limit'] = self.request.GET.get('recipes_limit', 10)
+        print(context['recipes_limit'])        
+        return context
+
+    
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -235,7 +256,8 @@ class CustomUserViewset(DjoserUserViewSet):
         follow_user = get_object_or_404(User, id=id)
         user = request.user
 
-        subscription = Follow.objects.filter(user=user, following=follow_user)
+        # subscription = Follow.objects.filter(user=user, following=follow_user)
+        subscription = user.follower.filter(following=follow_user)
 
         if request.method == 'POST':
             if subscription.exists():
@@ -262,21 +284,38 @@ class CustomUserViewset(DjoserUserViewSet):
                 status=status.HTTP_204_NO_CONTENT)
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # ИСПРАВИТЬ!!!
+#################################################################
+#################################################################
+
     @action(detail=False, methods=['get'],
-            permission_classes=[IsAuthenticated])
-    def subscriptions(self, request):
+            permission_classes=[IsAuthenticated],
+            pagination_class=PageLimitPagination,
+            url_path='subscriptions'
+            )
+    def get_subscriptions(self, request):
         """Список подписок текущего пользователя"""
-        subscriptions = Follow.objects.filter(
-            user=request.user
-        ).select_related('following')
+        
+        user = request.user
+        
+        subscriptions = user.follower.all()
+
+        subsribed_users_id = [item.following.id for item in subscriptions]
+
+        subscribed_users = User.objects.filter(id__in=subsribed_users_id)
+
+        query_params = request.query_params.get('recipes_limit')
+        
+        # subscriptions = Follow.objects.filter(user=user)
+        # ).select_related('following')
 
         # Пагинация
-        page = self.paginate_queryset(subscriptions)
+        page = self.paginate_queryset(subscribed_users)
         if page is not None:
             serializer = SubscriptionSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionSerializer(subscriptions, many=True)
+        serializer = SubscriptionSerializer(subscribed_users, context={'recipes_limit': query_params}, many=True)
+     
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 ##############################################################################
