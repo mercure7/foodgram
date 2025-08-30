@@ -25,7 +25,7 @@ class IngredientFilter(FilterSet):
         queryset = queryset.filter(Q(name__istartswith=value) 
                                    | Q(name__icontains=value))
         return queryset
-        
+
 
 class RecipeFilter(FilterSet):
     """Фильтр для модели Recipe."""
@@ -35,7 +35,7 @@ class RecipeFilter(FilterSet):
         field_name='tags__slug',
         to_field_name='slug'
     )
-    ### ПРОВЕРИТЬ ЭТОТ ВАРИАНТ
+    # ПРОВЕРИТЬ ЭТОТ ВАРИАНТ
     # tags = filters.AllValuesMultipleFilter(
     #     field_name='tags__slug',
     #     label='Tags'
@@ -51,8 +51,7 @@ class RecipeFilter(FilterSet):
 
     class Meta:
         model = Recipes
-        fields = ['tags', 'author', 'is_in_shopping_cart', 'is_favorited', 
-                  'recipes_limit']
+        fields = ['tags', 'author', 'is_in_shopping_cart', 'is_favorited']
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
@@ -65,6 +64,3 @@ class RecipeFilter(FilterSet):
         if value and user.is_authenticated:
             return queryset.filter(favorites__user=user)
         return queryset
-    
-    def filter_recipes_limit(self, queryset, name, value):
-        return queryset[0:value]

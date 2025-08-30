@@ -281,12 +281,13 @@ class SubscriptionSerializer(UserGetSerializer):
         """Cписок рецептов автора"""
         
         recipes_limit = self.context.get('recipes_limit')
-        print(recipes_limit)
+        print(recipes_limit, type(recipes_limit))
         # if request:
         # recipes_limit = int(request.query_params.get('recipes_limit', 5))
-        recipes_to_show = obj.recipes.all()[:recipes_limit]
-        # else:
-        #     recipes_to_show = obj.recipes.all()[:2]
+        if recipes_limit is not None:
+            recipes_to_show = obj.recipes.all()[:int(recipes_limit)]
+        else:
+            recipes_to_show = obj.recipes.all()
         
         return RecipeReadSerializerForSubscriptions(recipes_to_show, many=True).data
       

@@ -299,9 +299,9 @@ class CustomUserViewset(DjoserUserViewSet):
         
         subscriptions = user.follower.all()
 
-        subsribed_users_id = [item.following.id for item in subscriptions]
+        subscribed_users = [item.following for item in subscriptions]
 
-        subscribed_users = User.objects.filter(id__in=subsribed_users_id)
+        # subscribed_users = User.objects.filter(id__in=subscribed_users_id)
 
         query_params = request.query_params.get('recipes_limit')
         
@@ -309,12 +309,12 @@ class CustomUserViewset(DjoserUserViewSet):
         # ).select_related('following')
 
         # Пагинация
-        page = self.paginate_queryset(subscribed_users)
-        if page is not None:
-            serializer = SubscriptionSerializer(page, many=True)
+        paginated_subscribed_users = self.paginate_queryset(subscribed_users)
+        if paginated_subscribed_users is not None:
+            serializer = SubscriptionSerializer(paginated_subscribed_users, many=True, context={'recipes_limit': query_params})
             return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionSerializer(subscribed_users, context={'recipes_limit': query_params}, many=True)
+        # serializer = SubscriptionSerializer(subscribed_users, context={'recipes_limit': query_params}, many=True)
      
         return Response(serializer.data, status=status.HTTP_200_OK)
     
