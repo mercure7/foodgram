@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 
 from djoser.views import UserViewSet as DjoserUserViewSet
+from djoser.permissions import CurrentUserOrAdmin
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -24,8 +25,9 @@ from .serializers import (RecipeReadSerializer, RecipePostSerializer,
                           IngredientsSerializer, TagsReadSerializer,
                           UserGetSerializer, UserSignUpSerializer,
                           SubscriptionSerializer, AvatarUpdateSerializer,
+                          RecipeReadSerializerForSubscriptions
                           )
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly, IsAdminOrReadOnly, IsCurrentUserAdminOrReadOnly
 from .pagination import PageLimitPagination
 
 SHORT_CODE_LENGTH = 6
@@ -45,7 +47,7 @@ def generate_short_code():
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     # Заменить пермишен IsAuthor or Readonly
-    permission_classes = [AllowAny,]
+    # permission_classes = [IsAuthorOrReadOnly, IsAdminOrReadOnly]
 
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -61,7 +63,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #     return self.generate_short_code()
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAuthorOrReadOnly()]
+        elif self.action in ['create', 'favorite', 'shopping_cart',
+                             'download_shopping_cart']:
             return [IsAuthenticated()]
         return [AllowAny()]
 
@@ -78,16 +83,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         # instance.original_url = f"{settings.BASE_URL}/recipes/{instance.id}/"
 
         # serializer.save(update_fields=['original_url'])
-    
 
 
-    @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthorOrReadOnly])
+    @action(detail=True, methods=['post', 'delete'],)
     def favorite(self, request, id=None):
         """Добавление/удаление рецепта из избранного"""
         # recipe = self.get_object()
         recipe = get_object_or_404(Recipes, id=id)
         user = request.user
+              
         
         favorites = Favorites.objects.filter(user=user, recipe=recipe)
 
@@ -98,8 +102,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             Favorites.objects.create(user=user, recipe=recipe)
+            serializer = RecipeReadSerializerForSubscriptions(recipe)
             return Response(
-                {'message': 'Рецепт добавлен в избранное'},
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
         
@@ -115,15 +120,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'message': 'Рецепт удален из избранного'},
                 status=status.HTTP_204_NO_CONTENT
             )
-        
+
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthorOrReadOnly])
+            permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, id=None):
         """Добавление/удаление рецепта из корзины покупок"""
+
+        if not request.user.is_authenticated:
+            return Response(
+                {'ошибка': 'Пользователь не авторизован'},
+                status=status.HTTP_401_UNAUTHORIZED)
+
         recipe = get_object_or_404(Recipes, id=id)
         user = request.user
         recipe_in_cart = ShoppingCart.objects.filter(user=user, recipe=recipe)
-
+      
+            
         if request.method == 'POST':
             if recipe_in_cart.exists():
                 return Response(
@@ -131,8 +143,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             ShoppingCart.objects.create(user=user, recipe=recipe)
+            serializer = RecipeReadSerializerForSubscriptions(recipe)
             return Response(
-                {'message': 'Рецепт добавлен в корзину'},
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
         
@@ -160,7 +173,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     #     return render(request, 'shopping_list.html', context, status)
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
         user = request.user
         
@@ -209,9 +222,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class TagViewset(viewsets.ModelViewSet):
     queryset = Tags.objects.all()
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny]
     serializer_class = TagsReadSerializer
     pagination_class = None
+    http_method_names = ['get']
 
 
 class IngredientViewset(viewsets.ModelViewSet):
@@ -221,6 +235,7 @@ class IngredientViewset(viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_class = IngredientFilter
+    http_method_names = ['get']
 
 
 # class FavoriteViewset(viewsets.ModelViewSet):
@@ -235,23 +250,39 @@ class IngredientViewset(viewsets.ModelViewSet):
 class CustomUserViewset(DjoserUserViewSet):
     """Кастом вьюсет для создания пользователей"""
     pagination_class = PageLimitPagination
-    permission_classes = [AllowAny]
     lookup_field = 'id'
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
+    # def get_serializer_context(self):
+    #     context = super().get_serializer_context()
         
-        # Явно передаем КОНКРЕТНЫЕ параметры, а не весь request
-        context['recipes_limit'] = self.request.GET.get('recipes_limit', 10)
-        print(context['recipes_limit'])        
-        return context
+    #     # Явно передаем КОНКРЕТНЫЕ параметры, а не весь request
+    #     context['recipes_limit'] = self.request.GET.get('recipes_limit', 10)
+    #     print(context['recipes_limit'])        
+    #     return context
 
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [CurrentUserOrAdmin()]
+        elif self.action in ['subscribe', 'get_subscriptions', 'avatar', 'me']:
+            return [IsAuthenticated()]
+        return [AllowAny()]
     
-
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def me(self, request):
+        """Получение и обновление данных текущего пользователя"""
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+ 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
         """Добавление/удаление пользователя из подписок"""
+
+        if not request.user.is_authenticated:
+            return Response(
+                {'ошибка': 'Пользователь не авторизован'},
+                status=status.HTTP_401_UNAUTHORIZED)
+
         # recipe = self.get_object()
         follow_user = get_object_or_404(User, id=id)
         user = request.user
@@ -265,9 +296,22 @@ class CustomUserViewset(DjoserUserViewSet):
                     {'errors': 'Этот пользователь уже в избранном'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            Follow.objects.create(user=user, following=follow_user)
+            if user == follow_user:
+                return Response(
+                    {'errors': 'Нельзя добавить в избранное самого себя'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+#############################
+            query_params = request.query_params.get('recipes_limit')
+            user_added = Follow.objects.create(user=user, 
+                                               following=follow_user)
+            user_added = user_added.following
+            serializer = SubscriptionSerializer(
+                user_added,
+                context={'recipes_limit': query_params}, many=False)
+            
             return Response(
-                {'message': 'Пользватель добавлен в подписки'},
+                serializer.data,
                 status=status.HTTP_201_CREATED
             )
 
@@ -324,12 +368,17 @@ class CustomUserViewset(DjoserUserViewSet):
     def avatar(self, request):
         """Обновление и удаление аватара текущего пользователя"""
 
+        # if not request.user.is_authenticated:
+        #     return Response(
+        #         {'ошибка': 'Пользователь не авторизован'},
+        #         status=status.HTTP_401_UNAUTHORIZED)
+
         user = request.user
         serializer = AvatarUpdateSerializer(user, data=request.data)
         if request.method == 'PUT' and serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if user.avatar and request.method == 'DELETE':
+        if request.method == 'DELETE':
             user.avatar.delete(save=False)  
             user.avatar = None
             user.save()
