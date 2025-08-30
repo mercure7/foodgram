@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.serializers import ValidationError
 from djoser.serializers import (UserCreateSerializer,
                                 UserSerializer as BaseUserSerializer)
 
@@ -60,6 +61,7 @@ class TagsReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tags
         fields = ['id', 'name', 'slug']
+        
 
 
 # class UserSerializer(serializers.ModelSerializer):
@@ -169,14 +171,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
     # tags = TagsWriteSerializer(many=True, source='recipe_tags')
     tags = serializers.PrimaryKeyRelatedField(queryset=Tags.objects.all(),
                                               many=True, required=True)
-    
-    
-    # # tags = serializers.PrimaryKeyRelatedField(
-    #     queryset=Tags.objects.all(), 
-    #     many=True, 
-    #     required=False
-    # )
-    # author = UserSerializer(read_only=True)
+
     image = Base64ImageField()
     # author = serializers.SerializerMethodField()
     # original_url = serializers.SerializerMethodField(read_only=True)
@@ -189,6 +184,39 @@ class RecipePostSerializer(serializers.ModelSerializer):
                   'is_in_shopping_cart', 'image', 'name', 'text', 
                   'cooking_time']
         read_only_fields = ('author', )
+
+    def validate_tags(self, value):
+        if value == []:
+            raise ValidationError("Теги не должны быть пустыми")
+
+        if len(value) != len(set(value)):
+            raise ValidationError("Теги не должны содержать дубликатов")
+        return value
+    
+    def validate_ingredients(self, value):
+        print(value)
+        if value == []:
+            raise ValidationError("Нужно добавить ингредиенты")
+        
+        ingredient_ids = []
+        for ingredient in value:
+            ingredient_ids.append(ingredient.get('ingredient_id').get('id'))
+            print(ingredient_ids)   
+        if len(ingredient_ids) != len(set(ingredient_ids)):
+            raise ValidationError(f"Найдены дубликаты ingredients")
+    
+        return value
+    
+    def validate(self, data):
+        """Общая валидация всех данных"""
+        if 'ingredients' or 'tags' not in data:
+            raise ValidationError({"ingredients, tags": "Эти поля обязательны"})
+
+        return data
+
+
+        
+        
 
     # def to_representation(self, instance):
     #     """Преобразуем IDs в объекты при выводе"""
@@ -217,7 +245,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             return obj.shopping_cart.filter(user=request.user).exists()
         return False
 
-    
+
     def create(self, validated_data):
 
         ingredients_data = validated_data.pop('recipe_ingredients')
@@ -226,7 +254,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         # instance = super().create(validated_data)
 
         # validated_data['original_url'] = f"{settings.BASE_URL}/recipes/{instance.id}/"
-                
+
         recipe = Recipes.objects.create(**validated_data)
 
         recipe.tags.set(tags_data)
