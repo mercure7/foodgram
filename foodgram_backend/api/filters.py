@@ -17,14 +17,11 @@ class IngredientFilter(FilterSet):
 
     # Добавляем поиск по наличию символов не только в начале
     def filter_name(self, queryset, name, value):
-        # # Ищем по началу, но если нет результатов - ищем по содержанию
-        # if queryset.filter(name__istartwith=value).exists():
-        #     return queryset
-        # return queryset.filter(name__icontains=value)
-
-        queryset = queryset.filter(Q(name__istartswith=value) 
-                                   | Q(name__icontains=value))
-        return queryset
+        # Ищем по началу, но если нет результатов - ищем по содержанию
+        queryset_starts_with = queryset.filter(name__istartswith=value)
+        if queryset_starts_with.exists():
+            return queryset_starts_with
+        return queryset.filter(name__icontains=value)
 
 
 class RecipeFilter(FilterSet):

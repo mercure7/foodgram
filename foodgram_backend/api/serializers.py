@@ -94,7 +94,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredients
-        fields = ['id', 'name', 'measurement_unit']
+        fields = ['id', 'name', 'measurement_unit']        
 
     # def get_amount(self, data):
     #     return 'X'

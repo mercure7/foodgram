@@ -52,7 +52,7 @@ class Ingredients(models.Model):
                                         verbose_name='Единица измерения')
 
     class Meta:
-        ordering = ['id']
+        # ordering = ['id']
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
