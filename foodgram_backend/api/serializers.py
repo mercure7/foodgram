@@ -181,7 +181,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = ['id', 'tags', 'author', 'ingredients', 'is_favorited', 
-                  'is_in_shopping_cart', 'image', 'name', 'text', 
+                  'is_in_shopping_cart', 'name', 'image', 'text', 
                   'cooking_time']
         read_only_fields = ('author', )
 
@@ -227,20 +227,25 @@ class RecipePostSerializer(serializers.ModelSerializer):
     
     
     # Фиксит ошибку по формату данных после добавления/изменения рецепта
-    # def to_representation(self, instance):
-    #     """Преобразуем IDs в объекты при выводе"""
-    #     representation = super().to_representation(instance)
+    def to_representation(self, instance):
+        """Преобразуем IDs в объекты при выводе"""
+        representation = super().to_representation(instance)
         
-    #     # Заменяем IDs тегов на полные объекты
-    #     representation['tags'] = TagsReadSerializer(
-    #         instance.tags.all(), 
-    #         many=True
-    #     ).data
-    #     representation['ingredients'] = RecipeIngredientsReadSerializer(
-    #         instance.recipe_ingredients.all(), 
-    #         many=True
-    #     ).data
-    #     return representation
+        # Заменяем IDs тегов на полные объекты
+        representation['tags'] = TagsReadSerializer(
+            instance.tags.all(), 
+            many=True
+        ).data
+        representation['ingredients'] = RecipeIngredientsReadSerializer(
+            instance.recipe_ingredients.all(), 
+            many=True
+        ).data
+        representation['author'] = UserGetSerializer(
+            instance.author, 
+            many=False
+        ).data
+
+        return representation
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
