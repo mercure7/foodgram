@@ -186,6 +186,9 @@ class RecipePostSerializer(serializers.ModelSerializer):
         read_only_fields = ('author', )
 
     def validate_tags(self, value):
+        if value is None:
+            raise ValidationError("Поле тегов обязательно для заполнения")
+    
         if value == []:
             raise ValidationError("Теги не должны быть пустыми")
 
@@ -195,29 +198,35 @@ class RecipePostSerializer(serializers.ModelSerializer):
     
     def validate_ingredients(self, value):
         print(value)
+        if value is None:
+            raise ValidationError("Поле ингредиентов обязательно для заполнения")
         if value == []:
             raise ValidationError("Нужно добавить ингредиенты")
-        
         ingredient_ids = []
         for ingredient in value:
             ingredient_ids.append(ingredient.get('ingredient_id').get('id'))
             print(ingredient_ids)   
         if len(ingredient_ids) != len(set(ingredient_ids)):
-            raise ValidationError(f"Найдены дубликаты ingredients")
-    
+            raise ValidationError(f"Найдены дубликаты ингредиенты")
         return value
     
-    def validate(self, data):
-        """Общая валидация всех данных"""
-        if 'ingredients' or 'tags' not in data:
-            raise ValidationError({"ingredients, tags": "Эти поля обязательны"})
-
-        return data
-
-
-        
-        
-
+    def validate(self, attrs):
+        # Для PATCH запросов проверяем наличие обязательных полей
+        request = self.context.get('request')
+        if self.context['request'].method == 'PATCH':
+            data = request.data
+            if 'tags' not in data:
+                raise serializers.ValidationError({
+                    'tags': 'Это поле обязательно для обновления'
+                })
+            if 'ingredients' not in data:
+                raise serializers.ValidationError({
+                    'ingredients': 'Это поле обязательно для обновления'
+                })
+        return attrs
+    
+    
+    # Фиксит ошибку по формату данных после добавления/изменения рецепта
     # def to_representation(self, instance):
     #     """Преобразуем IDs в объекты при выводе"""
     #     representation = super().to_representation(instance)
@@ -334,7 +343,6 @@ class SubscriptionSerializer(UserGetSerializer):
             'id', 'email', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count', 'avatar']
 
-    
     # def get_is_subscribed(self, obj):
     #     """Всегда True для подписок"""
     #     return True
@@ -345,7 +353,7 @@ class SubscriptionSerializer(UserGetSerializer):
 
     def get_recipes(self, obj):
         """Cписок рецептов автора"""
-        
+
         recipes_limit = self.context.get('recipes_limit')
         print(recipes_limit, type(recipes_limit))
         # if request:
@@ -354,9 +362,10 @@ class SubscriptionSerializer(UserGetSerializer):
             recipes_to_show = obj.recipes.all()[:int(recipes_limit)]
         else:
             recipes_to_show = obj.recipes.all()
-        
-        return RecipeReadSerializerForSubscriptions(recipes_to_show, many=True).data
-      
+
+        return RecipeReadSerializerForSubscriptions(recipes_to_show,
+                                                    many=True).data
+
 
 class AvatarUpdateSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True)
