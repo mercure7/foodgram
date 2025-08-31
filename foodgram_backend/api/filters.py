@@ -1,23 +1,21 @@
+"""Кастомные фильтры для поиска."""
 from django_filters.rest_framework import (FilterSet, CharFilter,
                                            ModelMultipleChoiceFilter,
                                            BooleanFilter)
-from django.db.models import Q
-from django.db.models import QuerySet
 
 from recipes.models import Ingredients, Recipes, Tags
 
 
 class IngredientFilter(FilterSet):
-    # name = CharFilter(lookup_expr='istartswith')
+    """Кастомный фильтр для Ингредиентов."""
+
     name = CharFilter(method='filter_name')
 
     class Meta:
         model = Ingredients
         fields = ['name']
 
-    # Добавляем поиск по наличию символов не только в начале
     def filter_name(self, queryset, name, value):
-        # Ищем по началу, но если нет результатов - ищем по содержанию
         queryset_starts_with = queryset.filter(name__istartswith=value)
         if queryset_starts_with.exists():
             return queryset_starts_with
@@ -32,11 +30,6 @@ class RecipeFilter(FilterSet):
         field_name='tags__slug',
         to_field_name='slug'
     )
-    # ПРОВЕРИТЬ ЭТОТ ВАРИАНТ
-    # tags = filters.AllValuesMultipleFilter(
-    #     field_name='tags__slug',
-    #     label='Tags'
-
     is_in_shopping_cart = BooleanFilter(
         method='filter_is_in_shopping_cart'
     )
