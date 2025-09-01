@@ -190,7 +190,7 @@ class TagViewset(viewsets.ModelViewSet):
 
 class IngredientViewset(viewsets.ModelViewSet):
     queryset = Ingredients.objects.all()
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny, ]
     serializer_class = IngredientsSerializer
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
@@ -311,8 +311,8 @@ class CustomUserViewset(DjoserUserViewSet):
 
 class Subscribtions(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated,]
-    parser_classes = [LimitOffsetPagination,]
+    permission_classes = [IsAuthenticated, ]
+    parser_classes = [LimitOffsetPagination, ]
 
 
 def redirect_short_link(request, code):
