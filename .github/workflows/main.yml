@@ -92,7 +92,19 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3   
+        uses: actions/checkout@v3 
+      
+      
+      - name: Execute remote commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd foodgram
+            sudo rm -f /home/yc-user/foodgram/docker-compose.production.yml                  
                         
       - name: Copy docker-compose.production via SSH
         uses: appleboy/scp-action@master
@@ -102,7 +114,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.production.yml"
-          target: "foodgram"
+          target: "foodgram/"
           overwrite: true
 
       - name: Execute remote commands
