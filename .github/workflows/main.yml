@@ -103,8 +103,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.production.yml"
           target: "foodgram"
-          overwrite: true
-
+          
       - name: Execute remote commands
         uses: appleboy/ssh-action@master
         with:
