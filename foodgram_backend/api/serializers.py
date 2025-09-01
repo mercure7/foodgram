@@ -1,11 +1,12 @@
-from django.contrib.auth import get_user_model
-from rest_framework import serializers
-from rest_framework.serializers import ValidationError
 from djoser.serializers import (UserCreateSerializer,
                                 UserSerializer as BaseUserSerializer)
 
-from recipes.models import Recipes, Ingredients, Tags, RecipeIngredients
+from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from rest_framework.serializers import ValidationError
+
 from .fields import Base64ImageField
+from recipes.models import Recipes, Ingredients, Tags, RecipeIngredients
 
 
 User = get_user_model()
