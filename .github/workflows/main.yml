@@ -125,6 +125,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           target: /foodgram/
           source: docker-compose.production.yml
           strip_components: 1      
