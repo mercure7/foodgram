@@ -7,14 +7,14 @@
 
 ## Проект в сети интернет.
 Рабочий проект размещен по адресу: https://fg.zapto.org/.
-Рецепты доступны беслатно. Для возможности добавдения своих, нужно зарегистрироваться.
+Рецепты доступны беслатно. Для возможности добавления своих, нужно зарегистрироваться.
 
 ## Запуск на локальном сервере.
-### Как запустить frontend:
+### Как запустить проект в Docker контейнерах:
 * Для запуска проекта в системе должен быть установлен Docker.
-```
+
 https://docs.docker.com/get-started/get-docker/
-```
+
 
 * Клонировать репозиторий и перейти в него в командной строке:
 
@@ -43,8 +43,12 @@ docker compose exec backend python manage.py migrate
 * Наполнить базу данных примерами ингредиентов и тегов.
 
  - Импорт данных для таблицы Ingredients:
-``` python manage.py ingredients_import_csv foodgram_backend/data/ingredients.csv ```
-``` python manage.py tags_import_csv foodgram_backend/data/tags.csv ```
+``` 
+python manage.py ingredients_import_csv foodgram_backend/data/ingredients.csv 
+```
+``` 
+python manage.py tags_import_csv foodgram_backend/data/tags.csv 
+```
 
 ## REST API
 Frontend и backend проекта взаимодейсивуют по API.
