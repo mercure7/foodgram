@@ -34,17 +34,9 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(', ')
 
-CSRF_COOKIE_SECURE = True  # Только HTTPS
-CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = [
     'https://fg.zapto.org',
 ]
-
-# Настройки сессии
-SESSION_COOKIE_SECURE = True
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
-
 
 # Application definition
 
