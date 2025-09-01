@@ -30,9 +30,11 @@ class Recipes(models.Model):
                                          verbose_name='Ингредиенты')
     image = models.ImageField(upload_to='recipes/images/',
                               verbose_name='Изображение блюда')
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(auto_now_add=True,
+                                    verbose_name='Дата публикации')
     original_url = models.URLField(unique=True, null=True, blank=True)
-    short_url = models.SlugField(unique=True, null=True, blank=True)
+    short_url = models.SlugField(unique=True, null=True, blank=True,
+                                 verbose_name='Слаг для прямой ссылки')
 
     class Meta:
         ordering = ['-pub_date']
@@ -94,6 +96,9 @@ class RecipeIngredients(models.Model):
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
 
+    def __str__(self):
+        return f'{self.recipe_id}, {self.ingredient_id}'
+
 
 class Favorites(models.Model):
     """Модель для рецептов в избранном."""
@@ -109,6 +114,9 @@ class Favorites(models.Model):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
 
+    def __str__(self):
+        return f'{self.recipe}, {self.user}'
+
 
 class ShoppingCart(models.Model):
     """Модель для списка покупок."""
@@ -123,3 +131,6 @@ class ShoppingCart(models.Model):
         verbose_name = 'Корзина для покупок'
         verbose_name_plural = 'Корзина для покупок'
         unique_together = ['user', 'recipe']
+
+    def __str__(self):
+        return f'{self.user}, {self.recipe}'

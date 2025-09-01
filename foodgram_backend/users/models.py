@@ -41,9 +41,12 @@ class Follow(models.Model):
     """Модель для подписок на других пользователей."""
 
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='follower')
-    following = models.ForeignKey(User, on_delete=models.CASCADE,
-                                  related_name='following')
+                             related_name='follower',
+                             verbose_name='Пользователь')
+    following = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Добавленный в подписки пользователь')
 
     class Meta:
         ordering = ['user']
@@ -52,4 +55,4 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки на пользователей'
 
     def __str__(self):
-        return f'{self.user} follows {self.following}'
+        return f'{self.user} подписан на - {self.following}'
