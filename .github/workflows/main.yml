@@ -108,16 +108,26 @@ jobs:
       #       cd foodgram
       #       sudo rm -f /home/yc-user/foodgram/docker-compose.production.yml                  
                         
-      - name: Copy docker-compose.production via SSH
-        uses: appleboy/scp-action@master
+      # - name: Copy docker-compose.production via SSH
+      #   uses: appleboy/scp-action@master
+      #   with:
+      #     host: ${{ secrets.HOST }}
+      #     username: ${{ secrets.USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     passphrase: ${{ secrets.SSH_PASSPHRASE }}
+      #     source: "docker-compose.production.yml"
+      #     target: "foodgram"
+      #     overwrite: true
+
+      - name: scp files separately
+        uses: appleboy/drone-scp
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "docker-compose.production.yml"
-          target: "foodgram"
-          overwrite: true
+          target: /foodgram/
+          source: docker-compose.production.yml
+          strip_components: 1      
 
       - name: Execute remote commands
         uses: appleboy/ssh-action@master
