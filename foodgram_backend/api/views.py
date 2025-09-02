@@ -2,16 +2,18 @@ import random
 import string
 
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as DjoserUserViewSet
-from recipes.models import Favorites, Ingredients, Recipes, ShoppingCart, Tags
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from recipes.models import Favorites, Ingredients, Recipes, ShoppingCart, Tags
 from users.models import Follow
 
 from .filters import IngredientFilter, RecipeFilter
@@ -311,6 +313,7 @@ class Subscribtions(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated, ]
     parser_classes = [LimitOffsetPagination, ]
+    queryset = User.objects.annotate(recipes_count=Count('recipes'))
 
 
 def redirect_short_link(request, code):

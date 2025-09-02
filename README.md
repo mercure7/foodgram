@@ -44,10 +44,10 @@ docker compose exec backend python manage.py migrate
 
  - Импорт данных для таблицы Ingredients:
 ``` 
-python manage.py ingredients_import_csv foodgram_backend/data/ingredients.csv 
+python manage.py ingredients_import_csv data/ingredients.csv 
 ```
 ``` 
-python manage.py tags_import_csv foodgram_backend/data/tags.csv 
+python manage.py tags_import_csv data/tags.csv 
 ```
 
 ## REST API
