@@ -1,8 +1,7 @@
 """Кастомные фильтры для поиска."""
-from django_filters.rest_framework import (FilterSet, CharFilter,
-                                           ModelMultipleChoiceFilter,
-                                           BooleanFilter)
-
+from django_filters.rest_framework import (BooleanFilter, CharFilter,
+                                           FilterSet,
+                                           ModelMultipleChoiceFilter)
 from recipes.models import Ingredients, Recipes, Tags
 
 

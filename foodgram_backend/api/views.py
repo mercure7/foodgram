@@ -1,28 +1,26 @@
 import random
 import string
 
-from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect, render
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.views import UserViewSet as DjoserUserViewSet
 from djoser.permissions import CurrentUserOrAdmin
-from rest_framework import viewsets, status
+from djoser.views import UserViewSet as DjoserUserViewSet
+from recipes.models import Favorites, Ingredients, Recipes, ShoppingCart, Tags
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import filters
+from users.models import Follow
 
 from .filters import IngredientFilter, RecipeFilter
-from recipes.models import Recipes, Tags, Ingredients, Favorites, ShoppingCart
-from users.models import Follow
-from .serializers import (RecipeReadSerializer, RecipePostSerializer,
-                          IngredientsSerializer, TagsReadSerializer,
-                          SubscriptionSerializer, AvatarUpdateSerializer,
-                          RecipeReadSerializerForSubscriptions
-                          )
-from .permissions import IsAuthorOrReadOnly
 from .pagination import PageLimitPagination
+from .permissions import IsAuthorOrReadOnly
+from .serializers import (AvatarUpdateSerializer, IngredientsSerializer,
+                          RecipePostSerializer, RecipeReadSerializer,
+                          RecipeReadSerializerForSubscriptions,
+                          SubscriptionSerializer, TagsReadSerializer)
 
 SHORT_CODE_LENGTH = 6
 
