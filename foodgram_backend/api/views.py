@@ -266,5 +266,5 @@ class UserViewset(DjoserUserViewSet):
 def redirect_short_link(request, code):
     if request.method == 'GET':
         recipe = get_object_or_404(Recipes, short_url=code)
-        return redirect(request.build_absolute_uri(f'/recipes/{recipe.id}/'))
+        return redirect(request.build_absolute_uri(f'/recipes/{recipe.id}'))
     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
