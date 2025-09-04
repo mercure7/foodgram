@@ -4,46 +4,52 @@ from .models import (Favorites, Ingredients, RecipeIngredients, Recipes,
                      ShoppingCart, Tags)
 
 
+class IngredientsInline(admin.TabularInline):
+    model = RecipeIngredients
+    extra = 1
+    verbose_name_plural = 'Ингредиенты'
+
+
+@admin.register(Ingredients)
+class IngredientsAdmin(admin.ModelAdmin):
+    inlines = (IngredientsInline, )
+
+
+@admin.register(Recipes)
 class RecipesAdmin(admin.ModelAdmin):
+    inlines = [IngredientsInline,]
     list_display = (
         'name',
         'author',
         'display_tags',
-        'image',
         'pub_date',
         'short_url',
-        'favorite_count'
+        'favorite_count',
+        'display_ingredients'
     )
     search_fields = ('name', 'author__username', 'author__email')
     list_filter = ('tags',)
     empty_value_display = 'Значение не задано'
     readonly_fields = ('favorite_count', 'pub_date')
 
+    @admin.display(description='Добавлен в избранное, кол-во раз')
     def favorite_count(self, obj):
         return obj.favorites.count()
 
-    favorite_count.short_description = 'Добавлен в избранное, кол-во раз'
-
+    @admin.display(description='Ингредиенты')
     def display_ingredients(self, obj):
         """Отображает список ингредиентов."""
         return ", ".join(
-            [ingredient.name for ingredient in obj.recipe_ingredients.all()])
-    display_ingredients.short_description = 'Ингредиенты'
+            [ingredient.ingredient_id.name for ingredient
+             in obj.recipe_ingredients.all()])
 
+    @admin.display(description='Теги')
     def display_tags(self, obj):
         """Отображает список тегов."""
         return ", ".join([tag.name for tag in obj.tags.all()])
-    display_tags.short_description = 'Теги'
 
 
-class IngredientsAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'measurement_unit',
-    )
-    search_fields = ('name',)
-
-
+@admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin):
     list_display = (
         'name',
@@ -52,9 +58,5 @@ class TagsAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-admin.site.register(Recipes, RecipesAdmin)
-admin.site.register(Ingredients, IngredientsAdmin)
-admin.site.register(Tags, TagsAdmin)
-admin.site.register(RecipeIngredients)
 admin.site.register(ShoppingCart)
 admin.site.register(Favorites)

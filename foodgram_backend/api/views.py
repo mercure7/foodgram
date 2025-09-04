@@ -1,19 +1,19 @@
 import random
 import string
 
-from constants import SHORT_CODE_LENGTH
 from django.contrib.auth import get_user_model
-from django.db.models import Count, F, Sum
+from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.permissions import CurrentUserOrAdmin
 from djoser.views import UserViewSet as DjoserUserViewSet
-from recipes.models import Favorites, Ingredients, Recipes, ShoppingCart, Tags
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from constants import SHORT_CODE_LENGTH
+from recipes.models import Favorites, Ingredients, Recipes, ShoppingCart, Tags
 
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import PageLimitPagination
@@ -29,7 +29,7 @@ User = get_user_model()
 
 
 def generate_short_code():
-
+    "Генерирует произвольный слаг для прямой ссылки."
     short_url = ''.join(random.choices(string.ascii_letters
                         + string.digits, k=SHORT_CODE_LENGTH))
     if not Recipes.objects.filter(short_url=short_url).exists():
@@ -200,8 +200,7 @@ class UserViewset(DjoserUserViewSet):
         subscription = user.follower.filter(following=follow_user)
         data = {'user': user.id, 'following': follow_user.id}
         query_params = request.query_params.get('recipes_limit')
-        serializer = FollowSerializer(data=data,
-                                      context={'request': request})
+        serializer = FollowSerializer(data=data)
 
         if request.method == 'POST':
             serializer_read = UserGetSerializerFollow(
@@ -262,13 +261,6 @@ class UserViewset(DjoserUserViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             return Response({'detail': 'Аватар не найден!'},
                             status=status.HTTP_400_BAD_REQUEST)
-
-
-class Subscribtions(viewsets.ModelViewSet):
-    serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated, ]
-    parser_classes = [LimitOffsetPagination, ]
-    queryset = User.objects.annotate(recipes_count=Count('recipes'))
 
 
 def redirect_short_link(request, code):

@@ -1,11 +1,12 @@
-from constants import MIN_VALUE_INGREDIENT
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
-from recipes.models import (Favorites, Ingredients, RecipeIngredients, Recipes,
-                            ShoppingCart, Tags)
 from rest_framework import serializers
 from rest_framework.serializers import UniqueTogetherValidator, ValidationError
+
+from constants import MIN_VALUE_INGREDIENT
+from recipes.models import (Favorites, Ingredients, RecipeIngredients, Recipes,
+                            ShoppingCart, Tags)
 from users.models import Follow
 
 from .fields import Base64ImageField
@@ -44,7 +45,7 @@ class TagsReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tags
-        fields = ['id', 'name', 'slug']
+        fields = '__all__'
 
 
 class RecipeIngredientsWriteSerializer(serializers.ModelSerializer):
@@ -77,7 +78,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredients
-        fields = ['__all__']
+        fields = '__all__'
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -148,21 +149,22 @@ class RecipePostSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if 'tags' not in data:
-            raise ValidationError('Поле тегов обязательно!')
+            raise ValidationError({'detail': 'Поле тегов обязательно!'})
         if data['tags'] == []:
-            raise ValidationError('Теги не должны быть пустыми')
+            raise ValidationError({'detail': 'Теги не должны быть пустыми'})
         if len(data['tags']) != len(set(data['tags'])):
-            raise ValidationError('Теги не должны содержать дубликатов')
+            raise ValidationError(
+                {'detail': 'Теги не должны содержать дубликатов'})
         if 'ingredients' not in data:
-            raise serializers.ValidationError('Поле ингредиентов обязательно!')
+            raise serializers.ValidationError(
+                {'detail': 'Поле ингредиентов обязательно!'})
         if data['ingredients'] == []:
-            raise ValidationError("Нужно добавить ингредиенты")
+            raise ValidationError({'detail': "Нужно добавить ингредиенты"})
         ingredient_ids = []
         for ingredient in data['ingredients']:
-            ingredient_ids.append(
-                ingredient.get('ingredient_id', {}).get('id'))
+            ingredient_ids.append(ingredient.get('id'))
         if len(ingredient_ids) != len(set(ingredient_ids)):
-            raise ValidationError('Найдены дубликаты ингредиенты')
+            raise ValidationError({'detail': 'Найдены дубликаты ингредиенты'})
         return data
 
     def to_representation(self, instance):
@@ -208,8 +210,9 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return instance
 
 
-def get_recipes_for_user_with_limit(obj, recipes_limit):
+def get_recipes_for_user_with_limit(obj, context):
     """Cписок рецептов автора."""
+    recipes_limit = context.get('recipes_limit')
     all_recipes = obj.recipes.all()
     try:
         if recipes_limit is not None:
@@ -235,8 +238,7 @@ class SubscriptionSerializer(UserGetSerializer):
             'is_subscribed', 'recipes', 'avatar']
 
     def get_recipes(self, obj):
-        recipes_limit = self.context.get('recipes_limit')
-        return get_recipes_for_user_with_limit(obj, recipes_limit)
+        return get_recipes_for_user_with_limit(obj, self.context)
 
 
 class UserGetSerializerFollow(SubscriptionSerializer):
@@ -251,8 +253,7 @@ class UserGetSerializerFollow(SubscriptionSerializer):
         return obj.recipes.count()
 
     def get_recipes(self, obj):
-        recipes_limit = self.context.get('recipes_limit')
-        return get_recipes_for_user_with_limit(obj, recipes_limit)
+        return get_recipes_for_user_with_limit(obj, self.context)
 
 
 class AvatarUpdateSerializer(serializers.ModelSerializer):

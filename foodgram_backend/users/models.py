@@ -1,6 +1,10 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
+
+from constants import (MAX_EMAIL_LENGTH, MAX_LENGTH_FIRST_NAME,
+                       MAX_LENGTH_LAST_NAME, MAX_LENGTH_USERNAME,
+                       MAX_PASSWORD_LENGTH)
 
 
 class User(AbstractUser):
@@ -8,28 +12,25 @@ class User(AbstractUser):
 
     username = models.CharField(
         'Ник пользователя',
-        max_length=150,
+        max_length=MAX_LENGTH_USERNAME,
         unique=True,
-        validators=[
-            RegexValidator(r'^[\w.@+-]+\Z',
-                           'Недопустимые символы в username!')
-        ]
+        validators=[UnicodeUsernameValidator()]
     )
 
-    first_name = models.CharField('Имя', max_length=150)
-    last_name = models.CharField('Фамилия', max_length=150)
+    first_name = models.CharField('Имя', max_length=MAX_LENGTH_FIRST_NAME)
+    last_name = models.CharField('Фамилия', max_length=MAX_LENGTH_LAST_NAME)
     email = models.EmailField('Адрес электронной почты',
-                              max_length=254,
+                              max_length=MAX_EMAIL_LENGTH,
                               unique=True,
                               )
-    password = models.CharField('Пароль', max_length=254)
+    password = models.CharField('Пароль', max_length=MAX_PASSWORD_LENGTH)
     avatar = models.ImageField('Аватар пользователя',
-                               upload_to='users/avatars/', blank=True)
+                               upload_to='users/avatars/')
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
 
     class Meta:
-        ordering = ['id']
+        ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
