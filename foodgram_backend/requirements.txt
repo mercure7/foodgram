@@ -14,7 +14,6 @@ djangorestframework_simplejwt==5.5.1
 djoser==2.3.3
 dotenv==0.9.9
 flake8==7.3.0
-flake8-isort==6.1.2
 gunicorn==23.0.0
 idna==3.10
 isort==6.0.1

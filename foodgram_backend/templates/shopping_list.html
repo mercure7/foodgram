@@ -22,7 +22,7 @@
         <h2>Ингредиенты:</h2>
         {% for ingredient in ingredients %}
         <div class="ingredient">
-            • {{ ingredient.name }}: {{ ingredient.total_amount }} {{ ingredient.measurement_unit }}
+            • {{ ingredient.name }}: {{ ingredient.total_amount }} {{ ingredient.unit }}
         </div>
         {% empty %}
         <p>Корзина пуста</p>
