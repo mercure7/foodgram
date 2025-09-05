@@ -17,7 +17,7 @@ class IngredientsAdmin(admin.ModelAdmin):
 
 @admin.register(Recipes)
 class RecipesAdmin(admin.ModelAdmin):
-    inlines = [IngredientsInline,]
+    inlines = [IngredientsInline, ]
     list_display = (
         'name',
         'author',
