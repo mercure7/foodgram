@@ -56,7 +56,6 @@ class Follow(models.Model):
             models.CheckConstraint(
                 name='Нельзя подписаться на самого себя!',
                 check=~models.Q(user=models.F('following'))
-
             )
         ]
         verbose_name = 'Подписка на пользователей'

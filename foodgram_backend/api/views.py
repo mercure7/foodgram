@@ -93,7 +93,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return self.create_favorites_shopping_cart(serializer, recipe)
         return self.delete_favorites_shopping_cart(
+<<<<<<< HEAD
             favorite, error='Рецепт не в избранном!')
+=======
+                favorite, error='Рецепт не в избранном!')
+>>>>>>> ca5b85b977d754bc064b3341de5b19a52febf333
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -109,7 +113,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return self.create_favorites_shopping_cart(serializer, recipe)
         return self.delete_favorites_shopping_cart(
+<<<<<<< HEAD
             recipe_in_cart, error='Рецепт не в корзине!')
+=======
+                recipe_in_cart, error='Рецепт не в корзине!')
+>>>>>>> ca5b85b977d754bc064b3341de5b19a52febf333
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
@@ -248,6 +256,10 @@ class UserViewset(DjoserUserViewSet):
         if request.method == 'PUT' and serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+<<<<<<< HEAD
+=======
+
+>>>>>>> ca5b85b977d754bc064b3341de5b19a52febf333
         if user.avatar:
             user.avatar.delete()
             user.avatar = None
