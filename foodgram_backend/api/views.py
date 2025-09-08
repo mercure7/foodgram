@@ -112,7 +112,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return self.create_favorites_shopping_cart(serializer, recipe)
         return self.delete_favorites_shopping_cart(
             recipe_in_cart,
-       error='Рецепт не в корзине!')
+            error='Рецепт не в корзине!')
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
