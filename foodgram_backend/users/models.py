@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
-from rest_framework.serializers import ValidationError
 
 from constants import (MAX_EMAIL_LENGTH, MAX_LENGTH_FIRST_NAME,
                        MAX_LENGTH_LAST_NAME, MAX_LENGTH_USERNAME,
@@ -52,28 +51,22 @@ class Follow(models.Model):
 
     class Meta:
         ordering = ['user']
-        unique_together = ['user', 'following']
+        # unique_together = ['user', 'following']
         # constraints = [
-        #     models.UniqueConstraint(
-        #         fields=['user', 'following'],
-        #         condition=Q(user__ne=F('following')),
+        #     models.CheckConstraint(
+        #         check=models.Q(user__ne=models.F('following')),
         #         name='non_self_follow'
         #     )
         # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                condition=models.Q(user__ne=models.F('following')),
+                name='non_self_follow'
+            )
+        ]
         verbose_name = 'Подписка на пользователей'
         verbose_name_plural = 'Подписки на пользователей'
-
-    def clean(self):
-        super().clean()
-
-        if self.user == self.following:
-            raise ValidationError(
-                {'detail': 'Невозможно подписаться на самого себя.'}
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.user} подписан на - {self.following}'
