@@ -114,22 +114,22 @@ class RecipeReadSerializerForSubscriptions(RecipeReadSerializer):
         fields = ['id', 'name', 'image', 'cooking_time']
         read_only_fields = ['id', 'name', 'image', 'cooking_time']
 
-        def validate(self, data):
-            request = self.context.get('request')
-            recipe = self.context.get('recipe')
+        # def validate(self, data):
+        #     request = self.context.get('request')
+        #     recipe = self.context.get('recipe')
 
-            if request.method == 'POST' and Favorites.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).exists():
-                raise serializers.ValidationError('Рецепт уже в избранном')
+        #     if request.method == 'POST' and Favorites.objects.filter(
+        #         user=request.user,
+        #         recipe=recipe
+        #     ).exists():
+        #         raise serializers.ValidationError('Рецепт уже в избранном')
 
-            if request.method == 'DELETE' and not Favorites.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).exists():
-                raise serializers.ValidationError('Рецепт не в избранном')
-            return data
+        #     if request.method == 'DELETE' and not Favorites.objects.filter(
+        #         user=request.user,
+        #         recipe=recipe
+        #     ).exists():
+        #         raise serializers.ValidationError('Рецепт не в избранном')
+        #     return data
 
 
 class RecipePostSerializer(serializers.ModelSerializer):

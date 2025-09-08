@@ -52,6 +52,12 @@ class Follow(models.Model):
     class Meta:
         ordering = ['user']
         unique_together = ['user', 'following']
+        constraints = [
+            models.CheckConstraint(
+                name='Нельзя подписаться на самого себя!',
+                check=~models.Q(user=models.F('following'))
+            )
+        ]
         verbose_name = 'Подписка на пользователей'
         verbose_name_plural = 'Подписки на пользователей'
 
