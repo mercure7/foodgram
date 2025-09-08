@@ -51,18 +51,12 @@ class Follow(models.Model):
 
     class Meta:
         ordering = ['user']
-        # unique_together = ['user', 'following']
-        # constraints = [
-        #     models.CheckConstraint(
-        #         check=models.Q(user__ne=models.F('following')),
-        #         name='non_self_follow'
-        #     )
-        # ]
+        unique_together = ['user', 'following']
         constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'following'],
-                condition=models.Q(user__ne=models.F('following')),
-                name='non_self_follow'
+            models.CheckConstraint(
+                name='Нельзя подписаться на самого себя!',
+                check=~models.Q(user=models.F('following'))
+
             )
         ]
         verbose_name = 'Подписка на пользователей'

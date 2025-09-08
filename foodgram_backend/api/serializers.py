@@ -226,6 +226,7 @@ class SubscriptionSerializer(UserGetSerializer):
 
 class UserGetSerializerFollow(SubscriptionSerializer):
     """Сериализатор для получения пользователя для подписок."""
+
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(SubscriptionSerializer.Meta):

@@ -29,7 +29,7 @@ User = get_user_model()
 
 
 def generate_short_code():
-    "Генерирует произвольный слаг для прямой ссылки."
+    """Генерирует произвольный слаг для прямой ссылки."""
     short_url = ''.join(random.choices(string.ascii_letters
                         + string.digits, k=SHORT_CODE_LENGTH))
     if not Recipes.objects.filter(short_url=short_url).exists():
@@ -188,7 +188,6 @@ class UserViewset(DjoserUserViewSet):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, id=None):
         """Добавление/удаление пользователя из подписок."""
-
         if not request.user.is_authenticated:
             return Response(
                 {'ошибка': 'Пользователь не авторизован'},
