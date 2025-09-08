@@ -58,7 +58,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipePostSerializer
 
     def perform_create(self, serializer):
-        serializer.save(short_url=generate_short_code())
+        serializer.save(author=self.request.user,
+                        short_url=generate_short_code())
 
     def create_favorites_shopping_cart(self, serializer, obj):
         serializer_read = RecipeReadSerializerForSubscriptions(obj)
@@ -85,6 +86,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Добавление/удаление рецепта из избранного."""
         recipe = get_object_or_404(Recipes, id=id)
         user = request.user
+
         favorite = Favorites.objects.filter(user=user, recipe=recipe)
         data = {'recipe': recipe.id, 'user': user.id}
         serializer = FavoriteSerializer(data=data,
@@ -110,7 +112,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return self.create_favorites_shopping_cart(serializer, recipe)
         return self.delete_favorites_shopping_cart(
             recipe_in_cart,
-            error='Рецепт не в корзине!')
+       error='Рецепт не в корзине!')
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
