@@ -64,6 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def create_favorites_shopping_cart(self, serializer, obj):
         serializer_read = RecipeReadSerializerForSubscriptions(obj)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer_read.data,
@@ -93,9 +94,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             return self.create_favorites_shopping_cart(serializer, recipe)
-        else:
-            return self.delete_favorites_shopping_cart(
-                favorite, error='Рецепт не в избранном!')
+        return self.delete_favorites_shopping_cart(
+            favorite, error='Рецепт не в избранном!')
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -110,9 +110,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             return self.create_favorites_shopping_cart(serializer, recipe)
-        else:
-            return self.delete_favorites_shopping_cart(
-                recipe_in_cart, error='Рецепт не в корзине!')
+        return self.delete_favorites_shopping_cart(
+            recipe_in_cart, error='Рецепт не в корзине!')
 
     @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
@@ -214,12 +213,11 @@ class UserViewset(DjoserUserViewSet):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST)
 
-        else:
-            deleted = subscription.delete()
-            if deleted[0] != 0:
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail': 'Пользователь не в подписках!'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        deleted = subscription.delete()
+        if deleted[0] != 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Пользователь не в подписках!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated],
@@ -253,14 +251,13 @@ class UserViewset(DjoserUserViewSet):
         if request.method == 'PUT' and serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            if user.avatar:
-                user.avatar.delete()
-                user.avatar = None
-                user.save()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail': 'Аватар не найден!'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        if user.avatar:
+            user.avatar.delete()
+            user.avatar = None
+            user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Аватар не найден!'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 def redirect_short_link(request, code):

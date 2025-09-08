@@ -114,23 +114,6 @@ class RecipeReadSerializerForSubscriptions(RecipeReadSerializer):
         fields = ['id', 'name', 'image', 'cooking_time']
         read_only_fields = ['id', 'name', 'image', 'cooking_time']
 
-        def validate(self, data):
-            request = self.context.get('request')
-            recipe = self.context.get('recipe')
-
-            if request.method == 'POST' and Favorites.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).exists():
-                raise serializers.ValidationError('Рецепт уже в избранном')
-
-            if request.method == 'DELETE' and not Favorites.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).exists():
-                raise serializers.ValidationError('Рецепт не в избранном')
-            return data
-
 
 class RecipePostSerializer(serializers.ModelSerializer):
     """Сериализатор для создания рецептов."""
@@ -278,9 +261,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ['user', 'recipe']
         validators = [
             UniqueTogetherValidator(
-                queryset=Favorites.objects.all(),
+                queryset=ShoppingCart.objects.all(),
                 fields=['user', 'recipe'],
-                message={'deatail': 'Рецепт уже в избранном'}
+                message='Рецепт уже в избранном!!'
             )
         ]
 
@@ -294,7 +277,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(),
                 fields=['user', 'recipe'],
-                message='Рецепт уже в корзине!'
+                message='Рецепт уже в корзине!!'
             )
         ]
 
