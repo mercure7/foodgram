@@ -63,12 +63,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def create_favorites_shopping_cart(self, serializer, obj):
         serializer_read = RecipeReadSerializerForSubscriptions(obj)
 
-        return (Response(serializer_read.data,
-                         status=status.HTTP_201_CREATED)
-                if serializer.is_valid() and serializer.save()
-                else Response(serializer.errors,
-                              status=status.HTTP_400_BAD_REQUEST)
-                )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer_read.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def delete_favorites_shopping_cart(self, obj, error):
         deleted = obj.delete()
@@ -200,13 +202,13 @@ class UserViewset(DjoserUserViewSet):
             serializer_read = UserGetSerializerFollow(
                 follow_user,
                 context={'recipes_limit': query_params})
-
-            return (Response(serializer_read.data,
-                             status=status.HTTP_201_CREATED)
-                    if serializer.is_valid() and serializer.save()
-                    else Response(serializer.errors,
-                                  status=status.HTTP_400_BAD_REQUEST)
-                    )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer_read.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST)
 
         deleted = subscription.delete()
         if deleted[0] != 0:
